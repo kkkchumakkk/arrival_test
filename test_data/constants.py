@@ -1,26 +1,13 @@
-class Constants:
+from arrival_test.models.bear import Bear
 
-    BEAR_TYPE_POLAR = "POLAR"
-    BEAR_TYPE_BROWN = "BROWN"
-    BEAR_TYPE_BLACK = "BLACK"
-    BEAR_TYPE_GUMMY = "GUMMY"
+INCORRECT_BEAR_TYPE = 'ALASKA'
 
-    AVAILABLE_BEAR_TYPES = (BEAR_TYPE_POLAR, BEAR_TYPE_BROWN, BEAR_TYPE_BLACK, BEAR_TYPE_GUMMY)
+INCORRECT_BEAR_NAME = {}
 
-    FILED_BEAR_ID = "bear_id"
-    FIELD_BEAR_TYPE = "bear_type"
-    FIELD_BEAR_NAME = "bear_name"
-    FIELD_BEAR_AGE = "bear_age"
+INCORRECT_BEAR_AGE = 'Twelve and a half'
 
-    NON_EXISTING_RECORD = 'EMPTY'
+EMPTY_BEAR_DATA = {'bear_type': '', 'bear_name': '', 'bear_age': ''}
 
-    INVALID_BEAR_NAME = {}
-
-    BEAR_AGE_INTERVAL = (0, 100)
-
-    DEFAULT_STRING_LENGTH = 10
-
-    ERROR_MSG_PLEASE_FILL_ALL_THE_PARAMS = 'Error. Pls fill all parameters'
-
+DEFAULT_VALID_BEAR = Bear("BLACK", "mikhail", 17.5)
 
 
