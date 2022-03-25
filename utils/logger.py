@@ -1,6 +1,4 @@
-# coding=utf-8
 import logging
-# from os import path, makedirs
 
 
 def new_line(log_method_function):

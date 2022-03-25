@@ -2,11 +2,13 @@ import random
 import string
 import json
 
-from arrival_test.alaska_api.api_constants import FIELD_BEAR_TYPE, FIELD_BEAR_NAME, FIELD_BEAR_AGE
+from arrival_test.alaska_api.constants import FIELD_BEAR_TYPE, FIELD_BEAR_NAME, FIELD_BEAR_AGE
 
 
 class Bear:
-
+    """
+    Class that represents record in DB
+    """
     DEFAULT_BEAR_NAME_LENGTH = 10
     ALLOWED_BEAR_AGE_INTERVAL = (0, 100)
     DEFAULT_AGE_PRECISION = 2
@@ -29,15 +31,27 @@ class Bear:
     def __eq__(self, obj):
         return not self.get_diff(obj)
 
-    def json_repr(self):
-        return json.dumps(dict(zip((FIELD_BEAR_TYPE, FIELD_BEAR_NAME, FIELD_BEAR_AGE), (self.type, self.name, self.age))))
-
     def __str__(self):
         return f'Bear type: {self.type}. Bear age: {self.age}. Bear name: {self.name}.'
 
-    __repr__=__str__
+    __repr__ = __str__
+
+    def json_repr(self):
+        """
+        Method that converts instance of Bear class into json string
+
+        @return: json string
+        """
+        return json.dumps(dict(zip((FIELD_BEAR_TYPE, FIELD_BEAR_NAME, FIELD_BEAR_AGE), (self.type, self.name, self.age))))
 
     def get_diff(self, obj):
+        """
+        Method that compares two instances of Bear class
+
+        @return: string that contains differences between instances
+
+        @param obj: instance of Bear class
+        """
         diff_msg = ''
         if self.type != obj.type:
             diff_msg += f'Bear types does not match. {self.type} != {obj.type}'
@@ -45,11 +59,15 @@ class Bear:
             diff_msg += f'Bear names not match. {self.age} != {obj.age}'
         if self.name != obj.name:
             diff_msg += f'Bear ages does not match. {self.name} != {obj.name}'
+        if self.id and obj.id and self.id != obj.id:
+            diff_msg += f'Bear ids does not match. {self.id} != {obj.id}'
         return diff_msg
 
 
 class BearsGroup:
-
+    """
+    Class that represents collection of Bear instances
+    """
     def __init__(self, bears_data):
         self.bears = [Bear(**bear_data) for bear_data in bears_data]
 
@@ -57,21 +75,19 @@ class BearsGroup:
         self.bears.append(new_bear)
 
     def __contains__(self, other):
-        result = False
         for bear in self.bears:
             if bear == other:
-                result = True
-        return result
+                return True
+        return False
+
+    def __eq__(self, obj):
+        for bear in self.bears:
+            if bear not in obj.bears:
+                return False
+        return True
 
     def __repr__(self):
         str_repr = ''
         for bear in self.bears:
             str_repr += str(bear) + ';'
         return f'[{str_repr}]\n'
-
-    def __eq__(self, obj):
-        for bear in self.bears:
-            if bear not in obj.bears:
-                return False
-                break
-        return True

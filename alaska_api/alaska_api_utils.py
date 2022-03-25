@@ -1,16 +1,25 @@
-import requests
 import json
 
-from arrival_test.utils.logger import Logger
 from arrival_test.models.bear import Bear, BearsGroup
+from arrival_test.utils.base_api import RestApiClient
 
 
-class AlaskaApiUtils:
-
-    BASE_URL = 'http://localhost:8091/bear'
+class BearApiClient(RestApiClient):
+    """
+    Class for working with Alaska API
+    """
 
     @staticmethod
     def __parse_response(response_obj):
+        """
+        Method that parses response content in required format
+        @return: BearGroup instance if response content contains json and content can be deserialized into python list
+                 Bear instance if response content contains json and content can be deserialized into python dict
+                 string otherwise
+
+        @param response_obj: response object that was received after performing request
+
+        """
         status_code = response_obj.status_code
         try:
             response_data_from_json = response_obj.json()
@@ -25,38 +34,66 @@ class AlaskaApiUtils:
 
         return status_code, resp_data
 
-    @staticmethod
-    def create_bear(bear_data=None):
-        Logger.info(f'Performing "POST" request with request body {bear_data}')
-        if bear_data:
-            response = requests.post(AlaskaApiUtils.BASE_URL, data=bear_data)
-        else:
-            response = requests.post(AlaskaApiUtils.BASE_URL)
-        return AlaskaApiUtils.__parse_response(response)
+    def create_bear(self, bear_data=None):
+        """
+        Method to create a bear record in
 
-    @staticmethod
-    def get_all_bears():
-        response = requests.get(AlaskaApiUtils.BASE_URL)
-        return AlaskaApiUtils.__parse_response(response)
-    
-    @staticmethod
-    def get_bear_by_id(bear_id):
-        url = AlaskaApiUtils.BASE_URL + f'/{bear_id}'
-        Logger.info(f'Performing "GET" request for url: {url}')
-        response = requests.get(url)
-        return AlaskaApiUtils.__parse_response(response)
+        @return: status code and parsed response content
 
-    @staticmethod
-    def update_bear_by_id(bear_id, new_bear_data):
-        response = requests.put(AlaskaApiUtils.BASE_URL + f'/{bear_id}', data=new_bear_data)
-        return AlaskaApiUtils.__parse_response(response)
-    
-    @staticmethod
-    def delete_all_bears():
-        response = requests.delete(AlaskaApiUtils.BASE_URL)
-        return AlaskaApiUtils.__parse_response(response)
-    
-    @staticmethod
-    def delete_bear_by_id(bear_id):
-        response = requests.delete(AlaskaApiUtils.BASE_URL + f'/{bear_id}')
-        return AlaskaApiUtils.__parse_response(response)
+        @param bear_data(optional): instance of Bear class or None
+        """
+        data = bear_data.json_repr() if bear_data else None
+        response = self.post(self.endpoint, data)
+        return BearApiClient.__parse_response(response)
+
+    def delete_all_bears(self):
+        """
+        Method to delete all bears from DB
+
+        @return: status code and parsed response content
+        """
+        response = self.delete(self.endpoint)
+        return BearApiClient.__parse_response(response)
+
+    def delete_bear_by_id(self, bear_id):
+        """
+        Method to delete specific bear by id
+
+        @return: status code and parsed response content
+
+        @param bear_id: integer that represents bear id
+        """
+        response = self.delete(self.endpoint + f'/{bear_id}')
+        return BearApiClient.__parse_response(response)
+
+    def get_all_bears(self):
+        """
+        Method to get all records from DB
+
+        @return: status code and parsed response content
+        """
+        response = self.get(self.endpoint)
+        return BearApiClient.__parse_response(response)
+
+    def get_bear_by_id(self, bear_id):
+        """
+        Method to get specific bear by id
+
+        @return: status code and parsed response content
+
+        @param bear_id: integer that represents bear id
+        """
+        response = self.get(self.endpoint + f'/{bear_id}')
+        return BearApiClient.__parse_response(response)
+
+    def update_bear_by_id(self, bear_id, new_bear_data):
+        """
+        Method to update specific bear by id
+
+        @return: status code and parsed response content
+
+        @param bear_id: integer that represents bear id
+        @new_bear_data(optional): instance of Bear class
+        """
+        response = self.put(self.endpoint + f'/{bear_id}', data=new_bear_data.json_repr())
+        return BearApiClient.__parse_response(response)

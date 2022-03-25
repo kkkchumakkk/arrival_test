@@ -1,30 +1,25 @@
 import pytest
 from http import HTTPStatus
-from arrival_test.alaska_api.alaska_api_utils import AlaskaApiUtils
-from arrival_test.alaska_api.api_constants import ERROR_MSG_PLEASE_FILL_ALL_THE_PARAMS
+from arrival_test.alaska_api.constants import ERROR_MSG_PLEASE_FILL_ALL_THE_PARAMS, FIELD_BEAR_TYPE
 from arrival_test.tests.steps import generate_bear
-from arrival_test.tests.checks import check_status_code, check_bear_data, check_bear_in_bears_list, check_error_msg, \
-    check_bears_data_for_equality
+from arrival_test.tests.common_steps import generate_and_check_bear
+from arrival_test.tests.checks import check_for_equality, check_bear_data, check_bear_in_bears_list
 from arrival_test.models.bear import Bear
-from arrival_test.test_data.constants import INCORRECT_BEAR_TYPE, INCORRECT_BEAR_NAME, INCORRECT_BEAR_AGE, \
+from arrival_test.tests.test_data.constants import INCORRECT_BEAR_TYPE, INCORRECT_BEAR_NAME, INCORRECT_BEAR_AGE, \
     EMPTY_BEAR_DATA
 
 
 class TestPost:
 
+    @pytest.mark.xfail
     @pytest.mark.parametrize('bear_type', [Bear.BEAR_TYPE_POLAR, Bear.BEAR_TYPE_BLACK, Bear.BEAR_TYPE_BROWN,
                                            pytest.param(Bear.BEAR_TYPE_GUMMY,
                                                         marks=pytest.mark.xfail(raises=AttributeError))])
-    def test_post_for_bear_type(self, bear_type):
-        generated_bear = generate_bear(bear_type=bear_type)
+    def test_post_for_bear_type(self, setup_alaska_api, bear_type):
+        generated_bear = generate_and_check_bear(setup_alaska_api, {FIELD_BEAR_TYPE: bear_type})
 
-        resp_status_code, created_bear_id = AlaskaApiUtils.create_bear(generated_bear.json_repr())
-
-        check_status_code(resp_status_code, HTTPStatus.OK)
-        generated_bear.id = int(created_bear_id)
-
-        resp_status_code, bear_from_db = AlaskaApiUtils.get_bear_by_id(created_bear_id)
-        check_status_code(resp_status_code, HTTPStatus.OK)
+        resp_status_code, bear_from_db = setup_alaska_api.get_bear_by_id(generated_bear.id)
+        check_for_equality(resp_status_code, HTTPStatus.OK)
         check_bear_data(bear_from_db, generated_bear)
 
     @pytest.mark.parametrize('bear_with_invalid_data',
@@ -32,26 +27,19 @@ class TestPost:
                               pytest.param(generate_bear(bear_name=INCORRECT_BEAR_NAME), id="Invalid bear name"),
                               pytest.param(generate_bear(bear_age=INCORRECT_BEAR_AGE), id="Invalid bear age"),
                               pytest.param(generate_bear(**EMPTY_BEAR_DATA), id="Empty fields")])
-    def test_post_with_invalid_data(self, bear_with_invalid_data):
-        resp_status_code, _ = AlaskaApiUtils.create_bear(bear_with_invalid_data.json_repr())
+    def test_post_with_invalid_data(self, setup_alaska_api, bear_with_invalid_data):
+        resp_status_code, created_bear_id = setup_alaska_api.create_bear(bear_with_invalid_data)
+        check_for_equality(resp_status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
-        check_status_code(resp_status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        resp_status_code, bears_from_db = setup_alaska_api.get_all_bears()
+        check_bear_in_bears_list(bear_with_invalid_data, bears_from_db, False)
 
-        resp_status_code, bear_data = AlaskaApiUtils.get_all_bears()
+    def test_post_with_empty_body(self, setup_alaska_api):
+        resp_status_code, bears_from_db_before = setup_alaska_api.get_all_bears()
 
-        check_bear_in_bears_list(bear_with_invalid_data, bear_data, False)
+        resp_status_code, err_msg = setup_alaska_api.create_bear()
+        check_for_equality(resp_status_code, HTTPStatus.OK)
+        check_for_equality(err_msg, ERROR_MSG_PLEASE_FILL_ALL_THE_PARAMS)
 
-    def test_post_with_empty_body(self):
-        _, bears_data_before = AlaskaApiUtils.get_all_bears()
-
-        resp_status_code, err_msg = AlaskaApiUtils.create_bear()
-
-        check_status_code(resp_status_code, HTTPStatus.OK)
-
-        check_error_msg(err_msg, ERROR_MSG_PLEASE_FILL_ALL_THE_PARAMS)
-
-        _, bears_data_after = AlaskaApiUtils.get_all_bears()
-
-        check_bears_data_for_equality(bears_data_before, bears_data_after)
-
-
+        resp_status_code, bears_from_db_after = setup_alaska_api.get_all_bears()
+        check_for_equality(bears_from_db_before, bears_from_db_after)
